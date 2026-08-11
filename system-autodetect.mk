@@ -217,7 +217,7 @@ C99_SOURCE?=-std=c99 -DCF_HAS_VA_COPY
 ##
 
 INSTALL ?= sh $(TOPDIR)/install-sh -c
-INSTALL_STRIP ?= -s
+INSTALL_STRIP ?= 
 INSTALLDIR ?= mkdir -p
 
 BIN_MODE ?= 755

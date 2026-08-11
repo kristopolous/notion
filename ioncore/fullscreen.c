@@ -19,6 +19,7 @@
 #include "focus.h"
 #include "group.h"
 #include "return.h"
+#include <stdio.h>
 
 
 
@@ -54,15 +55,20 @@ bool region_fullscreen_scr(WRegion *reg, WScreen *scr, bool switchto)
 
 bool region_enter_fullscreen(WRegion *reg, bool switchto)
 {
+    fprintf(stderr, "[DEBUG] Entering fullscreen for region %p, switchto=%d\n", (void*)reg, switchto);
     WScreen *scr=region_screen_of(reg);
 
     if(scr==NULL){
         scr=rootwin_current_scr(region_rootwin_of(reg));
-        if(scr==NULL)
+        if(scr==NULL){
+            fprintf(stderr, "[DEBUG] No screen found, cannot fullscreen\n");
             return FALSE;
+        }
     }
 
-    return region_fullscreen_scr(reg, scr, switchto);
+    bool res = region_fullscreen_scr(reg, scr, switchto);
+    fprintf(stderr, "[DEBUG] region_fullscreen_scr returned %d\n", res);
+    return res;
 }
 
 
@@ -71,8 +77,17 @@ bool region_leave_fullscreen(WRegion *reg, bool switchto)
     int swf=(switchto ? PHOLDER_ATTACH_SWITCHTO : 0);
     WPHolder *ph=region_unset_get_return(reg);
 
-    if(ph==NULL)
-        return FALSE;
+    if(ph==NULL){
+        fprintf(stderr, "[DEBUG] No return placeholder, falling back to attach to screen\n");
+        WScreen *scr=region_screen_of(reg);
+        if(scr==NULL){
+            fprintf(stderr, "[DEBUG] No screen found, cannot leave fullscreen\n");
+            return FALSE;
+        }
+        bool attached = mplex_attach_simple((WMPlex*)scr, reg, swf)!=NULL;
+        fprintf(stderr, "[DEBUG] Fallback attach result: %d\n", attached);
+        return attached;
+    }
 
     if(!pholder_attach_mcfgoto(ph, swf, reg)){
         warn(TR("Failed to return from full screen mode; remaining manager "
